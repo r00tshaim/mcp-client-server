@@ -122,6 +122,85 @@ GEMINI_API_KEY=your-google-genai-key
 
 ---
 
+
+## SSE Analysis for Beginners
+
+Here’s a clear breakdown of what’s happening in a real network capture when the MCP client and server communicate using SSE:
+
+---
+
+### 🔄 Full Sequence of Events
+
+#### 📨 Step 1: Client Sends a `POST` Request
+
+* **Packet #21**
+* **Method:** `POST`
+* **Endpoint:** `/messages?sessionId=...`
+* **Payload:** JSON-RPC
+
+  ```json
+  {
+    "method": "tools/call",
+    "params": {
+      "name": "getBatteryStatus",
+      "arguments": {}
+    },
+    "jsonrpc": "2.0",
+    "id": 3
+  }
+  ```
+
+---
+
+#### ✅ Step 2: Server Responds with `HTTP/1.1 202 Accepted`
+
+* **Packet #23**
+* This means: “I got your request, and I’ll handle it, but not right now.”
+
+This typically happens when the **actual result will be streamed or sent later**, often used in async or server-sent event setups.
+
+---
+
+#### 📤 Step 3: Server Pushes the Response (SSE Style)
+
+* **Packet #25**
+* Server sends a raw TCP payload that looks like a **Server-Sent Events (SSE)** stream:
+
+  ```
+  event: message
+  data: {"result":{"content":[{"type":"text","text":"Battery level is 92% and it is not charging."}]},"jsonrpc":"2.0","id":3}
+  ```
+
+🧠 Interpretation:
+
+* This confirms that the server is using **Server-Sent Events (SSE)** to push the result **after** the initial 202 response.
+* The client doesn’t poll or request again. Instead, it **keeps the connection open** and the server pushes data once it’s ready.
+
+---
+
+### 🧩 Summary of Communication Pattern
+
+| Step | Role   | Action                                                                       |
+| ---- | ------ | ---------------------------------------------------------------------------- |
+| 1    | Client | Sends `POST /messages` with JSON-RPC payload                                 |
+| 2    | Server | Responds with `HTTP/1.1 202 Accepted`                                        |
+| 3    | Server | Later sends the result using **Server-Sent Event** with event type `message` |
+| 4    | Client | ACKs the pushed data                                                         |
+
+---
+
+### ✅ Why SSE?
+
+Using `Content-Type: text/event-stream`, the server can send **updates continuously or asynchronously** over a single long-lived HTTP connection.
+
+This approach is perfect when:
+
+* Results take time (e.g. processing a tool call).
+* Real-time progress or streaming is desired.
+
+---
+
+
 ## License
 
 MIT
