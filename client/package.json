@@ -1,0 +1,8 @@
+{
+	"dependencies": {
+		"@google/genai": "^1.7.0",
+		"@modelcontextprotocol/sdk": "^1.13.1",
+		"dotenv": "^16.5.0",
+		"sse.js": "link:@modelcontextprotocol/sdk/client/sse.js"
+	}
+}
